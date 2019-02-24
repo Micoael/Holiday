@@ -4,12 +4,15 @@ import android.content.SharedPreferences;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.CardView;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.imzgw.holiday.db.EverydayEvent;
@@ -23,34 +26,30 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import adapters.EventAdapters;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    TextView showTask;
-    EditText editText;
+    TextView showTask,holidayInfo;
+    Holiday holiday;
     int today;
+    List<EverydayEvent> list=new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        holidayInfo=findViewById(R.id.holiday_info);
         showTask=findViewById(R.id.task_show);
-        showTask.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                DataSupport.deleteAll(EverydayEvent.class);
-                return false;
-            }
-        });
-
-
 
         today=getToday();
         showTodayTask();
+        getHolidayStat();
+
     }
 
     @Override
     protected void onResume() {
-        today=getToday();
-        showTodayTask();
+        refresh();
         super.onResume();
     }
 
@@ -69,10 +68,14 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 break;
             case R.id.add_config_button:
-                Intent intents = new Intent();
-                intents.setClass(MainActivity.this,ConfigActivity.class);
-                startActivity(intents);
+                Intent intent2 = new Intent();
+                intent2.setClass(MainActivity.this,ConfigActivity.class);
+                startActivity(intent2);
                 break;
+            case R.id.delete:
+                Intent intent3 = new Intent();
+                intent3.setClass(MainActivity.this,DeleteActivity.class);
+                startActivity(intent3);
             default:
                 break;
         }
@@ -82,11 +85,12 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void showTodayTask(){
-
-        showTask.setText(Util.showText(Util.readStack(),today));
+        list=Util.readStack();
+        Log.d(TAG, "showTodayTask: List size is "+list.size());
+        showTask.setText(Util.showText(list,today));
     }
     private int getToday(){
-        Holiday holiday = readHolidayMainfist();
+        holiday = readHolidayMainfist();
         Log.d(TAG, "getToday: "+Util.getTodayIndicator(holiday));
         return Util.getTodayIndicator(holiday);
     }
@@ -117,5 +121,28 @@ public class MainActivity extends AppCompatActivity {
         Intent intent= new Intent();
         intent.setClass(MainActivity.this,ConfigActivity.class);
         startActivity(intent);
+    }
+
+    public void refresh(){
+        today=getToday();
+        list.clear();
+        list.addAll(Util.readStack());
+        showTodayTask();
+    }
+    public void getHolidayStat(){
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (!(holiday ==null)){
+                    holidayInfo.setText(
+                            "你的假期已经过了"+
+                            Util.getProgress(holiday)+"%. \n"+
+                            "它将于"+ String.format(holiday.getEndDate().toString(),"%tF%n")
+                            +"结束."
+                    );
+
+                }
+            }
+        });
     }
 }

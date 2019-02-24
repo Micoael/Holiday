@@ -70,9 +70,7 @@ public class Util {
 
 
     public static List<EverydayEvent> readStack() {
-        //TODO:fetch data from database
         List<EverydayEvent> list= DataSupport.findAll(EverydayEvent.class);
-
         return list;
     }
 
